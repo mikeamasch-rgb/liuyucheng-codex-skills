@@ -1,111 +1,130 @@
-# 换电脑迁移说明
+# 换电脑迁移
 
-这份文档解决：
+这份文档用于说明：
 
-- 换电脑后这套规则库怎么带过去
-- 如何保证项目继续按同样方式工作
+1. 这套规则库换电脑后怎么恢复
+2. 项目代码换电脑后怎么恢复
+3. `.env` 和代理这些关键配置怎么重新落地
 
-## 一、最重要的东西是什么
+## 一、需要迁移的三层内容
 
-你真正要迁移的不是单个项目，而是这三层：
+### 1. 规则库仓库
 
-1. 桌面规则库
-2. Codex 本地自定义 skills
-3. 项目自己的短版 `AGENTS.md`
+克隆：
 
-## 二、最小迁移清单
+```bash
+git clone https://github.com/mikeamasch-rgb/liuyucheng-codex-skills.git
+```
 
-### 1. 桌面规则库
+建议放在：
 
-复制整个目录：
+```txt
+Desktop/liuyucheng-codex-skills
+```
 
-- `C:\\Users\\admin\\Desktop\\项目规则库`
+### 2. 具体项目仓库
 
-### 2. 个人 skills
+例如当前项目：
 
-如果你把自己的通用 skill 放在：
+```bash
+git clone https://github.com/mikeamasch-rgb/google-maps-leads.git
+```
 
-- `C:\\Users\\admin\\.codex\\skills`
+### 3. 本地 Codex 配置与 skills
 
-则需要一起迁移。
+如果你还需要同步本机级配置，检查：
 
-### 3. 当前项目
+- `C:\\Users\\<你>\\.codex\\AGENTS.md`
+- `C:\\Users\\<你>\\.codex\\skills`
 
-复制项目目录本身，包括：
+## 二、换电脑后项目怎么恢复
 
-- 代码
-- `AGENTS.md`
-- `README`
-- `docs`
+### 第一步：安装基础环境
 
-### 4. 环境配置
+至少确认有：
 
-单独检查：
-
-- `.env`
-- 本地代理工具
 - Node / npm
-- Docker / 数据库
+- Git
+- GitHub CLI（可选，但推荐）
+- Docker（如果项目依赖容器）
+- PostgreSQL（或项目要求的数据库）
+- 代理客户端（如果需要访问 Google）
 
-不要默认新电脑会和旧电脑一致。
+### 第二步：克隆项目
 
----
+```bash
+git clone https://github.com/mikeamasch-rgb/google-maps-leads.git
+```
 
-## 三、换电脑后的接入步骤
+### 第三步：安装依赖
 
-### 第一步
+```bash
+npm install
+```
 
-把桌面规则库复制到新电脑固定位置。
+### 第四步：恢复 `.env`
 
-建议继续放：
+先复制：
 
-- `Desktop/项目规则库`
+```bash
+copy .env.example .env
+```
 
-### 第二步
+然后填真实值。
 
-把自定义 skills 放回：
+至少确认这些变量：
 
-- `%USERPROFILE%\\.codex\\skills`
+- `DATABASE_URL`
+- `GOOGLE_MAPS_API_KEY`
+- `GOOGLE_PLACES_PROXY_URL`
+- `ERP_BASE_URL`
+- `ERP_TOKEN`
 
-### 第三步
+其中当前项目真正需要的是：
 
-打开项目，检查项目 `AGENTS.md` 里的路由路径是否仍有效。
+- `DATABASE_URL`
+- `GOOGLE_MAPS_API_KEY`
+- `GOOGLE_PLACES_PROXY_URL`
+
+ERP 相关目前可为空。
+
+## 三、代理配置怎么迁移
+
+如果新电脑访问 Google 也需要代理：
+
+1. 先确认代理客户端是否在运行
+2. 再确认实际本地端口和协议
+3. 不要默认旧电脑的端口一定一样
 
 例如：
 
-- `../项目规则库/`
+```env
+GOOGLE_PLACES_PROXY_URL="http://127.0.0.1:10809"
+```
 
-如果桌面位置变了，就要同步改路径。
+或：
 
-### 第四步
+```env
+GOOGLE_PLACES_PROXY_URL="socks://127.0.0.1:10808"
+```
 
-验证运行环境：
-
-1. `npm install`
-2. `build`
-3. 数据库连接
-4. 外部 API key
-5. 代理
-
----
+关键不是照抄，而是先核实哪一个端口在新电脑上真的可用。
 
 ## 四、换电脑后最容易出问题的点
 
-1. 桌面路径变了，`AGENTS.md` 引用失效
-2. 技能目录没迁移
-3. 本地代理没装
-4. Docker / PostgreSQL 没装
-5. `.env` 没同步
-6. Node 版本不同
+1. 规则库路径变了，项目 `AGENTS.md` 路由失效
+2. `.env` 没恢复完整
+3. 数据库没启动
+4. 本地代理端口和旧电脑不同
+5. 浏览器能访问 Google，但 Node 进程不能
+6. 只测了本地 build，没测真实外部 API
 
----
+## 五、最小恢复验证
 
-## 五、推荐做法
+至少验证：
 
-如果以后这套规则库长期使用，最好：
-
-1. 把桌面规则库放入一个可同步目录
-2. 自定义 skills 同样做备份
-3. 给规则库加一个版本说明或更新日志
-
-这样换电脑时不需要重新从零搭。
+1. `npm run build`
+2. 项目主页能打开
+3. 数据库可连
+4. 外部 API key 已生效
+5. 如果依赖代理，服务端请求能真正出站
